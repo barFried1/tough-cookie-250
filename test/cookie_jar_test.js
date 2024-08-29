@@ -540,5 +540,26 @@ vows
         }
       }
     }
+  }).addBatch({
+    "Prototype pollution security breach": {
+      topic: function() {
+        const jar = new tough.CookieJar(undefined, {
+          rejectPublicSuffixes: false
+        });
+
+        //try to change special property
+        jar.setCookieSync(
+          "Slonser=polluted; Domain=__proto__; Path=/sus",
+          "https://__proto__/admin"
+        );
+
+        this.callback();
+      },
+      "result - special property did not override": function() {
+        const object = {};
+        assert(object["/sus"] === undefined);
+        assert(object["__proto__"]);
+      }
+    }
   })
   .export(module);

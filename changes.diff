@@ -1,0 +1,134 @@
+diff --git a/index.js b/index.js
+new file mode 100644
+index 0000000..a4b8fbd
+--- /dev/null
++++ b/index.js
+@@ -0,0 +1,18 @@
++const tough = require("tough-cookie");
++
++const jar = new tough.CookieJar(undefined, {
++    rejectPublicSuffixes: false
++  });
++
++  jar.setCookieSync(
++    "Slonser=polluted; Domain=__proto__; Path=/sus",
++    "https://__proto__/sus"
++  );
++
++const object = {};
++
++if (object["/sus"]) {
++    console.error("EXPLOITED SUCCESSFULLY")
++} else {
++    console.log("EXPLOIT FAILED");
++}
+diff --git a/lib/memstore.js b/lib/memstore.js
+index d2b915c..6f6689e 100644
+--- a/lib/memstore.js
++++ b/lib/memstore.js
+@@ -1,3 +1,15 @@
++/*
++      OverView:
++      Javascript objects have special properties that helps managing them.
++      When using the 'rejectPublicSuffixes=false' mode, one can override the special properties, by setting cookie with a domain with the same
++      name as a special property (__proto__, prototype, constructor). Affecting how
++      properties are accessed or set in the object, leading to unexpected behavior.
++      THis security breach is called 'Prototype Pollution'.
++
++      Fix:
++      • Changed object creation to 'Object.create(null)'.
++      When creating an object with 'Object.create(null)', an object is created without the special properties.
++ */
+ /*!
+  * Copyright (c) 2015, Salesforce.com, Inc.
+  * All rights reserved.
+@@ -36,7 +48,7 @@ var util = require('util');
+ 
+ function MemoryCookieStore() {
+   Store.call(this);
+-  this.idx = {};
++  this.idx = Object.create(null);
+ }
+ util.inherits(MemoryCookieStore, Store);
+ exports.MemoryCookieStore = MemoryCookieStore;
+@@ -115,10 +127,10 @@ MemoryCookieStore.prototype.findCookies = function(domain, path, cb) {
+ 
+ MemoryCookieStore.prototype.putCookie = function(cookie, cb) {
+   if (!this.idx[cookie.domain]) {
+-    this.idx[cookie.domain] = {};
++    this.idx[cookie.domain] = Object.create(null);
+   }
+   if (!this.idx[cookie.domain][cookie.path]) {
+-    this.idx[cookie.domain][cookie.path] = {};
++    this.idx[cookie.domain][cookie.path] = Object.create(null);
+   }
+   this.idx[cookie.domain][cookie.path][cookie.key] = cookie;
+   cb(null);
+@@ -150,7 +162,7 @@ MemoryCookieStore.prototype.removeCookies = function(domain, path, cb) {
+ };
+ 
+ MemoryCookieStore.prototype.removeAllCookies = function(cb) {
+-  this.idx = {};
++  this.idx = Object.create(null);
+   return cb(null);
+ }
+ 
+diff --git a/package.json b/package.json
+index 8af9909..a0b7efc 100644
+--- a/package.json
++++ b/package.json
+@@ -59,7 +59,9 @@
+   "scripts": {
+     "version": "genversion lib/version.js && git add lib/version.js",
+     "test": "vows test/*_test.js",
+-    "cover": "nyc --reporter=lcov --reporter=html vows test/*_test.js"
++    "cover": "nyc --reporter=lcov --reporter=html vows test/*_test.js",
++    "exploit-success": "npm install tough-cookie@2.5.0 && node index.js",
++    "exploit-fail": "npm install ./tough-cookie-2.5.0-PATCHED.tgz && node index.js"
+   },
+   "engines": {
+     "node": ">=0.8"
+@@ -73,6 +75,7 @@
+   },
+   "dependencies": {
+     "psl": "^1.1.28",
+-    "punycode": "^2.1.1"
++    "punycode": "^2.1.1",
++    "tough-cookie": "^2.5.0"
+   }
+ }
+diff --git a/test/cookie_jar_test.js b/test/cookie_jar_test.js
+index 67809b9..f3280d4 100644
+--- a/test/cookie_jar_test.js
++++ b/test/cookie_jar_test.js
+@@ -540,5 +540,26 @@ vows
+         }
+       }
+     }
++  }).addBatch({
++    "Prototype pollution security breach": {
++      topic: function() {
++        const jar = new tough.CookieJar(undefined, {
++          rejectPublicSuffixes: false
++        });
++
++        //try to change special property
++        jar.setCookieSync(
++          "Slonser=polluted; Domain=__proto__; Path=/sus",
++          "https://__proto__/admin"
++        );
++
++        this.callback();
++      },
++      "result - special property did not override": function() {
++        const object = {};
++        assert(object["/sus"] === undefined);
++        assert(object["__proto__"]);
++      }
++    }
+   })
+   .export(module);
+diff --git a/tough-cookie-2.5.0-PATCHED.tgz b/tough-cookie-2.5.0-PATCHED.tgz
+new file mode 100644
+index 0000000..ecc9f7b
+Binary files /dev/null and b/tough-cookie-2.5.0-PATCHED.tgz differ

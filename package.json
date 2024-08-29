@@ -59,7 +59,9 @@
   "scripts": {
     "version": "genversion lib/version.js && git add lib/version.js",
     "test": "vows test/*_test.js",
-    "cover": "nyc --reporter=lcov --reporter=html vows test/*_test.js"
+    "cover": "nyc --reporter=lcov --reporter=html vows test/*_test.js",
+    "exploit-success": "npm install tough-cookie@2.5.0 && node index.js",
+    "exploit-fail": "npm install ./tough-cookie-2.5.0-PATCHED.tgz && node index.js"
   },
   "engines": {
     "node": ">=0.8"
@@ -73,6 +75,7 @@
   },
   "dependencies": {
     "psl": "^1.1.28",
-    "punycode": "^2.1.1"
+    "punycode": "^2.1.1",
+    "tough-cookie": "^2.5.0"
   }
 }
