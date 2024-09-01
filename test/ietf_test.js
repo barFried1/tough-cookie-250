@@ -78,7 +78,6 @@ function setGetCookieVows() {
 
 function dateVows() {
   var theVows = {};
-
   [
     './ietf_data/dates/bsd-examples.json',
     './ietf_data/dates/examples.json'
